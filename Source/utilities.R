@@ -2,15 +2,17 @@
 
 plotSingle <- function(datalist, ASVnum, ASVname) {
   # plotSingle() displays the abundance gradient of a single ASV along the complete transect and shows it for different
-  # Depth_Grps and Size_Fractions. To pick an  ASV you can choose between a number [1..20] or #OTU_ID. The first one picks
-  # from the 20 most abundant ASVs the one corresponding to the chosen number. 
+  # Depth_Grps and Size_Fractions. To choose an ASV enter its #OTU_ID in the ASVnum argument.
   # The #OTU_ID takes a specific ID which stands for a specific nucleotide sequence. 
   
   if (is.character(ASVnum) & sum(as_vector(datalist$Count_Data[,1]) %in% ASVnum) == 1) {
+    
     data_selected <- datalist$Count_Data %>%
       filter(.[,1] == ASVnum) %>%
       select_if(is.numeric)
+    
   } else {
+    
     ASVname <- ""
     datalist$Meta_Data %>%
       mutate(Plot = 0) %>%
@@ -18,7 +20,9 @@ plotSingle <- function(datalist, ASVnum, ASVname) {
       facet_grid(Depth_Grp~Size_Fraction) +
       labs(title = "") +
       theme(plot.title = element_text(size = 7))
+    
     return()
+    
   }
   
   data_selected <- data_selected %>%
@@ -86,12 +90,12 @@ makeAppProportion <- function(datalist, CountsTotal) {
     as_tibble()
   
   return(datalist)
+  
 }
 
 remove_NAs <- function(Count_Data, replace = 0) {
   
   result <- Count_Data 
-  
   result[is.na(result)] <- replace
   
   return(result)
@@ -99,20 +103,20 @@ remove_NAs <- function(Count_Data, replace = 0) {
 }
 
 combineOceanDatalists <- function(datalist_1, datalist_2) {
-  datalist_1$Count_Data <- datalist_1$Count_Data %>%
-    select(-Richness)
-  datalist_2$Count_Data <- datalist_2$Count_Data %>%
-    select(-Richness)
+  
   datalist_complete <- datalist_1
-  datalist_complete$Count_Data <- full_join(datalist_1$Count_Data, datalist_2$Count_Data) %>%
+  
+  datalist_complete$Count_Data <- full_join(select(datalist_1$Count_Data, -Richness), 
+                                            select(datalist_2$Count_Data, -Richness)) %>%
     remove_NAs()
   
-  datalist_1$Meta_Data <- datalist_1$Meta_Data %>%
-    mutate(Station = as.character(Station))
-  
-  datalist_complete$Meta_Data <- full_join(datalist_1$Meta_Data, datalist_2$Meta_Data)
+  datalist_complete$Meta_Data <- full_join(mutate(datalist_1$Meta_Data,
+                                                  Station = as.character(Station)), 
+                                           mutate(datalist_2$Meta_Data,
+                                                  Station = as.character(Station)))
   
   return(datalist_complete)
+  
 }
 
 blastWrapper <- function(blastCommand, blastDB, queryFile) {
@@ -132,4 +136,5 @@ blastWrapper <- function(blastCommand, blastDB, queryFile) {
              sep = "\t",
              convert = TRUE) %>%
     select(-c(1,6))
+  
 }
