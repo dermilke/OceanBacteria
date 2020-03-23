@@ -3,11 +3,13 @@
 server = function(input, output, session) {
   
   output$PlotCorAnalysis <- renderPlot({
+    
     if (input$Colparam == "Empty" | is_empty(input$Colparam) | input$Colparam == "") {
       colorValue <- "red"
     } else {
       colorValue <- input$Colparam
     }
+    
     if (input$Sizeparam == "Empty" | is_empty(input$Sizeparam) | input$Sizeparam == "") {
       sizeValue <- 10
     } else {
@@ -15,39 +17,48 @@ server = function(input, output, session) {
     }
     
     Meta_Combined_working() %>%
-      
       ggplot(., aes(x = !!input$Xparam, y = !!input$Yparam, col = !!input$Colparam, size = !!input$Sizeparam)) +
       geom_point()
+  
   })
   
   Meta_Combined_working <- reactive({
     
     if (is.numeric(input$ASV_rows_selected)) {
       
-      datalist_Combined <- combineOceanDatalists(datalist_Atlantic_working()  %>%
-                                                   makeAppProportion(., Ocean = "Atlantic"), 
-                                                 datalist_Pacific_working()  %>%
-                                                   makeAppProportion(., Ocean = "Pacific"))
-      Meta_Combined_working <- datalist_Combined$Meta_Data
-      Meta_Combined_working <- Meta_Combined_working %>%
-        mutate(Abundance = datalist_Combined$Count_Data %>%
-                 slice(input$ASV_rows_selected) %>%
-                 select_if(is.numeric) %>%
-                 as.numeric()
-        )
-    } else if(is.numeric(input$BLAST_rows_selected)) {
-      datalist_Combined <- combineOceanDatalists(makeAppProportion(datalist_Atlantic, "Atlantic"), 
-                                                 makeAppProportion(datalist_Pacific, "Pacific"))
-      Meta_Combined_working <- datalist_Combined$Meta_Data
-      Meta_Combined_working <- Meta_Combined_working %>%
-        mutate(Abundance = datalist_Combined$Count_Data %>%
-                 filter(`#OTU_ID` == {datalist_Blast_working() %>% 
-                     slice(input$BLAST_rows_selected) %>%
-                     select(1) %>%
-                     as_vector()}) %>%
-                 select_if(is.numeric) %>%
-                 as.numeric()
-        )
+      datalist_Combined <- combineOceanDatalists(
+                             datalist_Atlantic_working()  %>%
+                               makeAppProportion(., apply(select_if(datalist_Atlantic$Count_Data, is.numeric), 2, sum)), 
+                             datalist_Pacific_working()  %>%
+                               makeAppProportion(., apply(select_if(datalist_Pacific$Count_Data, is.numeric), 2, sum))
+                           )
+      Meta_Combined_working <- datalist_Combined$Meta_Data %>%
+                                 mutate(Abundance = datalist_Combined$Count_Data %>%
+                                          slice(input$ASV_rows_selected) %>%
+                                          select_if(is.numeric) %>%
+                                          as.numeric()
+                                 )
+      
+    } else if (is.numeric(input$BLAST_rows_selected)) {
+      
+      datalist_Combined <- combineOceanDatalists(
+                             datalist_Atlantic %>%
+                                makeAppProportion(., apply(select_if(datalist_Atlantic$Count_Data, is.numeric), 2, sum)), 
+                             datalist_Pacific %>%
+                                makeAppProportion(., apply(select_if(datalist_Pacific$Count_Data, is.numeric), 2, sum))
+                           )
+      Meta_Combined_working <- datalist_Combined$Meta_Data %>%
+                                  mutate(Abundance = datalist_Combined$Count_Data %>%
+                                    filter(
+                                       `#OTU_ID` == {datalist_Blast_working() %>% 
+                                       slice(input$BLAST_rows_selected) %>%
+                                       select(1) %>%
+                                       as_vector()
+                                    }) %>%
+                                    select_if(is.numeric) %>%
+                                    as.numeric()
+                                  )
+      
     } else {
       datalist_Combined$Meta_Data
     }
@@ -63,23 +74,30 @@ server = function(input, output, session) {
     }
     
     if (input$Phylum == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         group_by(Phylum) %>%
         summarize_if(is.numeric, sum)
+      
     } else if (input$Class == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         group_by(Class) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else if (input$Order == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         filter(Class == input$Class) %>%
         group_by(Order) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else if (input$Family == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         filter(Class == input$Class) %>%
@@ -87,7 +105,9 @@ server = function(input, output, session) {
         group_by(Family) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else if (input$Genus == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         filter(Class == input$Class) %>%
@@ -96,7 +116,9 @@ server = function(input, output, session) {
         group_by(Genus) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else if (input$Species == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         filter(Class == input$Class) %>%
@@ -106,7 +128,9 @@ server = function(input, output, session) {
         group_by(Species) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>% 
         filter(Class == input$Class) %>% 
@@ -114,8 +138,8 @@ server = function(input, output, session) {
         filter(Family == input$Family) %>% 
         filter(Genus == input$Genus) %>%
         filter(Species == input$Species)
+      
     }
-    
     tmp
   })
   
@@ -129,23 +153,30 @@ server = function(input, output, session) {
     }
     
     if (input$Phylum == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         group_by(Phylum) %>%
         summarize_if(is.numeric, sum)
+      
     } else if (input$Class == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         group_by(Class) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else if (input$Order == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         filter(Class == input$Class) %>%
         group_by(Order) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else if (input$Family == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         filter(Class == input$Class) %>%
@@ -153,7 +184,9 @@ server = function(input, output, session) {
         group_by(Family) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else if (input$Genus == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         filter(Class == input$Class) %>%
@@ -162,7 +195,9 @@ server = function(input, output, session) {
         group_by(Genus) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else if (input$Species == "All") {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>%
         filter(Class == input$Class) %>%
@@ -172,7 +207,9 @@ server = function(input, output, session) {
         group_by(Species) %>%
         select_if(is.numeric) %>%
         summarize_all(sum)
+      
     } else {
+      
       tmp$Count_Data <- tmp$Count_Data %>%
         filter(Phylum == input$Phylum) %>% 
         filter(Class == input$Class) %>% 
@@ -180,6 +217,7 @@ server = function(input, output, session) {
         filter(Family == input$Family) %>% 
         filter(Genus == input$Genus) %>%
         filter(Species == input$Species)
+      
     }
     
     tmp 
@@ -197,17 +235,21 @@ server = function(input, output, session) {
         grepl("^[ATCG]+$", input$seqInputBlast)) {
       
       write_file(paste(">Query\n", input$seqInputBlast, sep = ""), queryFile)
+      
       blastTable <- blastWrapper(blastCommand, blastDB, queryFile) %>%
         filter(pident > 0.95)
       
       output <- right_join(datalist_Taxonomy, blastTable, by = "#OTU_ID") %>%
         drop_na()
+      
       output
+    
     } else {
+      
       showNotification("No sequence input for blast or sequence is too short (min length = 4).")
       tibble()
-    }
     
+    }
   })
   
   updateSelectizeInput(
@@ -308,46 +350,52 @@ server = function(input, output, session) {
     )
   })
   
-  observeEvent(input$blastGo, {
-    if (is.character(input$seqInputBlast) & nchar(input$seqInputBlast) > 4) {
-      write_file(paste(">Query\n", input$seqInputBlast, sep = ""), queryFile)
-      datalist_Taxonomy_working <- blastWrapper(blastCommand, blastDB, queryFile)
-    } else {
-      showNotification("No sequence input for blast or sequence is too short (min length = 4).")
-    } 
-  })
-  
   output$ASV <- DT::renderDataTable(
-    DT::datatable(datalist_Taxonomy_working(),
+    DT::datatable(datalist_Taxonomy_working() %>%
+                    rename("Counts Atlantic" = "Counts_1",
+                           "Counts Pacific" = "Counts_2",
+                           "Richness Atlantic" = "Richness_1",
+                           "Richness Pacific" = "Richness_2"),
                   selection = "single")
   )
   
   output$BLAST <- DT::renderDataTable(
-    DT::datatable(datalist_Blast_working(),
+    DT::datatable(datalist_Blast_working() %>%
+                    rename("Counts Atlantic" = "Counts_1",
+                           "Counts Pacific" = "Counts_2",
+                           "Richness Atlantic" = "Richness_1",
+                           "Richness Pacific" = "Richness_2"),
                   selection = "single")
   )
   
   output$PacificBrowse <- renderPlot({
+    
     if (is.numeric(input$ASV_rows_selected)) {
       
-      inputGrp <- datalist_Taxonomy_working() %>%
-        slice(input$ASV_rows_selected) %>%
-        select(1) %>%
-        as_vector()
+      if (select(slice(datalist_Taxonomy_working(), input$ASV_rows_selected), Counts_2) > 0) {
       
-      ASVname <- paste(ifelse(input$Phylum == "All", inputGrp, input$Phylum),
-                       ifelse(input$Class == "All", inputGrp, input$Class),
-                       ifelse(input$Order == "All", inputGrp, input$Order),
-                       ifelse(input$Family == "All", inputGrp, input$Family),
-                       ifelse(input$Genus == "All", inputGrp, input$Genus),
-                       ifelse(input$Species == "All", inputGrp, input$Species), sep = " - ")
-      
-      plotSingle(datalist_Pacific_working() %>%
-                   makeAppProportion(., Ocean = "Pacific"), inputGrp, ASVname)
-    } else {
-      ggplot(tibble(text = "ASV not found in Pacific.")) +
-        geom_text(aes(x = 1, y = 1, label = text)) +
-        theme_void()
+        inputGrp <- datalist_Taxonomy_working() %>%
+          slice(input$ASV_rows_selected) %>%
+          select(1) %>%
+          as_vector()
+        
+        ASVname <- paste(ifelse(input$Phylum == "All", inputGrp, input$Phylum),
+                         ifelse(input$Class == "All", inputGrp, input$Class),
+                         ifelse(input$Order == "All", inputGrp, input$Order),
+                         ifelse(input$Family == "All", inputGrp, input$Family),
+                         ifelse(input$Genus == "All", inputGrp, input$Genus),
+                         ifelse(input$Species == "All", inputGrp, input$Species), sep = " - ")
+        
+        plotSingle(datalist_Pacific_working() %>%
+                     makeAppProportion(., Ocean = "Pacific"), inputGrp, ASVname)
+        
+      } else {
+        
+        ggplot(tibble(text = "ASV not found in Pacific.")) +
+          geom_text(aes(x = 1, y = 1, label = text)) +
+          theme_void()
+        
+      }
     }
   })
   
@@ -371,12 +419,14 @@ server = function(input, output, session) {
         
         plotSingle(datalist_Atlantic_working() %>%
                      makeAppProportion(., Ocean = "Atlantic"), inputGrp, ASVname)
+        
       } else {
+        
         ggplot(tibble(text = "ASV not found in Atlantic")) +
           geom_text(aes(x = 1, y = 1, label = text)) +
           theme_void()
+        
       }
-      
     }
   })
   
@@ -394,10 +444,13 @@ server = function(input, output, session) {
         
         plotSingle(datalist_Pacific %>%
                      makeAppProportion(., Ocean = "Pacific"), as_vector(select(inputGrp,1)), ASVname)
+        
       } else {
+        
         ggplot(tibble(text = "ASV not found in Pacific.")) +
           geom_text(aes(x = 1, y = 1, label = text)) +
           theme_void()
+        
       }
     }
   })
@@ -416,10 +469,13 @@ server = function(input, output, session) {
         
         plotSingle(datalist_Atlantic %>%
                      makeAppProportion(., Ocean = "Atlantic"), as_vector(select(inputGrp,1)), ASVname)
+        
       } else {
+        
         ggplot(tibble(text = "ASV not found in Atlantic")) +
           geom_text(aes(x = 1, y = 1, label = text)) +
           theme_void()
+        
       }
     }
   })
