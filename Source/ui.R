@@ -50,20 +50,20 @@ ui = fluidPage(
             ),
             mainPanel(
               tabsetPanel(
+                tabPanel("Atlantic", plotOutput("AtlanticBrowse")),
+                tabPanel("Pacific", plotOutput("PacificBrowse")), 
                 tabPanel("Map", 
                          fluidRow(
                            column(4, 
-                              selectInput(inputId = "MapDepth", label = "Select Depth", 
-                                          choices = c(20, 40, 60, 100, 200, 300, 500))),
+                                  selectInput(inputId = "MapDepth", label = "Select Depth", 
+                                              choices = c(20, 40, 60, 100, 200, 300, 500))),
                            column(4,
-                             selectInput(inputId = "MapSizeFraction", label = "Select Size Fraction", 
-                                         choices = c("0.22-3µm (FL)", "3-8µm (SPA)", ">8µm (LPA)"))),
+                                  selectInput(inputId = "MapSizeFraction", label = "Select Size Fraction", 
+                                              choices = c("0.22-3µm (FL)", "3-8µm (SPA)", ">8µm (LPA)"))),
                            column(4,
-                             sliderInput(inputId = "ColorRange", label = "Define Color Range",
-                                         min = 0, max = 0.5, value = c(0,0.2), step = 0.001))),
-                         leaflet::leafletOutput("MapOutput")),
-                tabPanel("Atlantic", plotOutput("AtlanticBrowse")),
-                tabPanel("Pacific", plotOutput("PacificBrowse"))
+                                  sliderInput(inputId = "ColorRange", label = "Define Color Range",
+                                              min = 0, max = 0.5, value = c(0,0.2), step = 0.001))),
+                         leaflet::leafletOutput("MapOutput"))
               ),
               hr(),
               DT::dataTableOutput("ASV")
@@ -184,6 +184,8 @@ ui = fluidPage(
                           ),
                           mainPanel(
                             tabsetPanel(
+                              tabPanel("Atlantic", plotOutput("ChloroAtlanticBrowse")),
+                              tabPanel("Pacific", plotOutput("ChloroPacificBrowse")),
                               tabPanel("Map", 
                                        fluidRow(
                                          column(4, 
@@ -195,9 +197,7 @@ ui = fluidPage(
                                          column(4,
                                                 sliderInput(inputId = "ChloroColorRange", label = "Define Color Range",
                                                             min = 0, max = 0.5, value = c(0,0.2), step = 0.001))),
-                                       leaflet::leafletOutput("ChloroMapOutput")),
-                              tabPanel("Atlantic", plotOutput("ChloroAtlanticBrowse")),
-                              tabPanel("Pacific", plotOutput("ChloroPacificBrowse"))
+                                       leaflet::leafletOutput("ChloroMapOutput"))
                             ),
                             hr(),
                             DT::dataTableOutput("ChloroASV")
